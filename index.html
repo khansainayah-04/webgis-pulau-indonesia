@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>WebGIS Pulau Nasional</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+<style>
+body { margin:0; font-family: Arial, sans-serif; }
+#map { height: 100vh; }
+
+/* SEARCH */
+.search-box {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  background: white;
+  padding: 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  z-index: 1000;
+  width: 220px;
+}
+
+/* DASHBOARD */
+.dashboard {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: white;
+  padding: 15px;
+  width: 320px;
+  max-height: 80vh;
+  overflow-y: auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  z-index: 1000;
+  display: none;
+}
+
+.toggle-btn {
+  position: absolute;
+  top: 15px;
+  right: 350px;
+  background: #003366;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  z-index: 1000;
+}
+
+.search-box select,
+.search-box input,
+.search-box button,
+.dashboard select {
+  width: 100%;
+  margin-top: 5px;
+  padding: 5px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="map"></div>
+
+<!-- SEARCH -->
+<div class="search-box">
+  <select id="searchType">
+    <option value="Nama_Pulau">Nama Pulau</option>
+    <option value="Kode_Pulau">Kode Pulau</option>
+  </select>
+  <input type="text" id="searchInput" placeholder="Ketik kata kunci">
+  <button onclick="searchPulau()">Cari</button>
+</div>
+
+<!-- TOGGLE -->
+<button class="toggle-btn" onclick="toggleDashboard()">Statistik</button>
+
+<!-- DASHBOARD -->
+<div class="dashboard" id="dashboard">
+  <h3>Jumlah Pulau per Provinsi</h3>
+
+  <select id="provSelect" onchange="filterProvinsi()">
+    <option value="ALL">Semua Provinsi</option>
+  </select>
+
+  <canvas id="provChart" height="220"></canvas>
+</div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+var map = L.map('map').setView([-2.5, 118], 5);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap'
+}).addTo(map);
+
+var geoLayer;
+var chart;
+var provData = {};
+
+fetch("pulau_nasional.geojson")
+.then(res => res.json())
+.then(data => {
+
+  geoLayer = L.geoJSON(data, {
+    pointToLayer: (f, latlng) =>
+      L.circleMarker(latlng, {
+        radius: 4,
+        fillColor: "#0055A4",
+        color: "#ffffff",
+        weight: 1,
+        fillOpacity: 0.8
+      }),
+    onEachFeature: (f, l) => {
+      var kab = f.properties.Nama_Kabup;
+      l.bindPopup(
+        "<b>Kode Pulau:</b> " + f.properties.Kode_Pulau + "<br>" +
+        "<b>Nama Pulau:</b> " + f.properties.Nama_Pulau + "<br>" +
+        "<b>Provinsi:</b> " + f.properties.Nama_Provi + "<br>" +
+        (kab ? "<b>Kabupaten:</b> " + kab : "")
+      );
+    }
+  }).addTo(map);
+
+  buildStatistics();
+});
+
+function searchPulau() {
+  var type = document.getElementById("searchType").value;
+  var keyword = document.getElementById("searchInput").value.toLowerCase();
+
+  if (!keyword) return;
+
+  geoLayer.eachLayer(function(layer) {
+    var val = layer.feature.properties[type];
+    if (val && val.toString().toLowerCase().includes(keyword)) {
+      map.setView(layer.getLatLng(), 10);
+      layer.openPopup();
+    }
+  });
+}
+
+function buildStatistics() {
+  provData = {};
+
+  geoLayer.eachLayer(function(layer) {
+    var p = layer.feature.properties.Nama_Provi;
+    if (p) provData[p] = (provData[p] || 0) + 1;
+  });
+
+  var labels = Object.keys(provData);
+  var values = Object.values(provData);
+
+  var select = document.getElementById("provSelect");
+  select.innerHTML = '<option value="ALL">Semua Provinsi</option>';
+  labels.forEach(p => {
+    select.innerHTML += `<option value="${p}">${p}</option>`;
+  });
+
+  var ctx = document.getElementById("provChart");
+  chart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        data: values,
+        backgroundColor: labels.map(() =>
+          `hsl(${Math.random()*360},70%,60%)`
+        )
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } }
+    }
+  });
+}
+
+function filterProvinsi() {
+  var selected = document.getElementById("provSelect").value;
+
+  geoLayer.eachLayer(function(layer) {
+    var p = layer.feature.properties.Nama_Provi;
+    if (selected === "ALL" || p === selected) {
+      layer.setStyle({ opacity:1, fillOpacity:0.8 });
+    } else {
+      layer.setStyle({ opacity:0, fillOpacity:0 });
+    }
+  });
+}
+
+function toggleDashboard() {
+  var d = document.getElementById("dashboard");
+  d.style.display = (d.style.display === "none") ? "block" : "none";
+}
+</script>
+
+</body>
+</html>
