@@ -344,8 +344,8 @@ var totalPulau=geoLayer.getLayers().length;
 var totalProv=labels.length;
 
 document.getElementById("summary").innerHTML=
-"<b>Total Pulau:</b> "+totalPulau+"<br>"+
-"<b>Total Provinsi:</b> "+totalProv;
+"<b>Total Pulau Indonesia:</b> "+totalPulau+"<br>"+
+"<b>Total Provinsi (Memiliki Pulau):</b> "+totalProv;
 
 /* DROPDOWN */
 var select=document.getElementById("provSelect");
@@ -381,24 +381,59 @@ plugins:{legend:{display:false}}
 function filterProvinsi(){
 
 var selected=document.getElementById("provSelect").value;
+
 var group=[];
+var count=0;
 
 geoLayer.eachLayer(function(layer){
 
 var p=layer.feature.properties.Nama_Provi;
 
-if(selected==="ALL"||p===selected){
-layer.setStyle({opacity:1,fillOpacity:0.8});
+if(selected==="ALL" || p===selected){
+
+layer.setStyle({
+opacity:1,
+fillOpacity:0.8
+});
+
 group.push(layer.getLatLng());
+
+if(selected!=="ALL") count++;
+
 }
 else{
-layer.setStyle({opacity:0,fillOpacity:0});
+
+layer.setStyle({
+opacity:0,
+fillOpacity:0
+});
+
 }
 
 });
 
+/* ZOOM */
 if(group.length>0){
 map.fitBounds(L.latLngBounds(group));
+}
+
+/* UPDATE SUMMARY */
+if(selected==="ALL"){
+
+var totalPulau=geoLayer.getLayers().length;
+var totalProv=Object.keys(provData).length;
+
+document.getElementById("summary").innerHTML=
+"<b>Total Pulau (Nasional):</b> "+totalPulau+"<br>"+
+"<b>Jumlah Provinsi (Memiliki Pulau):</b> "+totalProv;
+
+}
+else{
+
+document.getElementById("summary").innerHTML=
+"<b>Provinsi:</b> "+selected+"<br>"+
+"<b>Jumlah Pulau:</b> "+count;
+
 }
 
 }
