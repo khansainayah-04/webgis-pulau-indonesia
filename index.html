@@ -168,12 +168,12 @@ Direktorat Toponimi dan Batas Daerah – Kementerian Dalam Negeri
 </div>
 
 <!-- TOGGLE -->
-<button class="toggle-btn" onclick="toggleDashboard()">Statistik</button>
+<button class="toggle-btn" onclick="toggleDashboard()">Dashboard</button>
 
 <!-- DASHBOARD -->
 <div class="dashboard" id="dashboard">
 
-<h3>Statistik Pulau Nasional</h3>
+<h3>Dashboard Pulau Nasional</h3>
 <div style="font-size:11px; opacity:0.8; margin-bottom:8px;">
 Berdasarkan Kepmendagri 300.2.2-2138 Tahun 2025
 </div>
@@ -222,7 +222,7 @@ var provData={};
 
 /* LOAD BATAS ADMIN */
 
-fetch("batas_admin.geojson")
+fetch("Batas_Wilayah_KabKot_simplified.json")
 .then(res=>res.json())
 .then(data=>{
 
