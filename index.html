@@ -207,13 +207,41 @@ var baseMaps={
 "Topography":topo
 };
 
-L.control.layers(baseMaps).addTo(map);
+var overlayMaps={};
+
+var layerControl=L.control.layers(
+baseMaps,
+overlayMaps
+).addTo(map);
 
 /* VARIABLES */
 var geoLayer;
+var batasLayer;
 var chart;
 var provData={};
 
+/* LOAD BATAS ADMIN */
+
+fetch("batas_admin.geojson")
+.then(res=>res.json())
+.then(data=>{
+
+batasLayer=L.geoJSON(data,{
+style:{
+color:"#FFD166",
+weight:1.5,
+dashArray:"4,4",
+opacity:0.8
+}
+}).addTo(map);
+
+layerControl.addOverlay(
+batasLayer,
+"Batas Administrasi"
+);
+
+});
+  
 /* LOAD GEOJSON */
 fetch("pulau_nasional.geojson")
 .then(res=>res.json())
